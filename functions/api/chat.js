@@ -57,12 +57,13 @@ export async function onRequestPost({ request, env }) {
       max_tokens: 650,
       temperature: 0.4
     });
-    const reply = result?.response || result?.result?.response;
+    const reply = result?.response || result?.result?.response || result?.choices?.[0]?.message?.content || result?.result?.choices?.[0]?.message?.content;
     if (!reply || typeof reply !== "string") throw new Error("Empty model response");
     await env.RATE_LIMIT_KV.put(key, String(used + 1), { expirationTtl: 172800 });
     return json({ reply, remaining: 99 - used }, 200,
       newVisitor ? { "Set-Cookie": `lb_visitor=${visitor}; Path=/; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax` } : {});
   } catch (error) {
+    console.error("Link Builders AI request failed:", error?.stack || error?.message || String(error));
     return json({ error: "Link Builders AI is temporarily unavailable. Please try again shortly." }, 502,
       newVisitor ? { "Set-Cookie": `lb_visitor=${visitor}; Path=/; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax` } : {});
   }
